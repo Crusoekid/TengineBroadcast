@@ -51,7 +51,7 @@ UltraFace::UltraFace(const std::string tengine_path,
     int dims[] = {1, 3, 240, 320};
 
     input_tensor = get_graph_tensor(graph, "input");
-
+    
     if (nullptr == input_tensor)
     {
         printf("Get input tensor failed\n");
@@ -90,7 +90,7 @@ int UltraFace::detect(cv::Mat &raw_image, std::vector<FaceInfo> &face_list) {
 
     int img_size      = in_w * in_h * 3;
     float* input_data = ( float* )malloc(img_size * sizeof(float));
-    get_input_data_cv(raw_image, input_data, in_w, in_h, mean_vals, norm_vals, 0);
+    get_input_data_cv(raw_image, input_data, in_w, in_h, mean_vals, norm_vals);
 
 
     if (set_tensor_buffer(input_tensor, input_data, (in_w * in_h * 3) * sizeof(float)) < 0)
@@ -117,7 +117,6 @@ int UltraFace::detect(cv::Mat &raw_image, std::vector<FaceInfo> &face_list) {
     tensor_t tensor_boxes = get_graph_tensor(graph, boxes.c_str());
 
     std::vector<FaceInfo> bbox_collection;
-
 
     auto end = chrono::steady_clock::now();
     chrono::duration<double> elapsed = end - start;
@@ -232,7 +231,7 @@ void UltraFace::nms(std::vector<FaceInfo> &input, std::vector<FaceInfo> &output,
     }
 }
 
-void UltraFace::get_input_data_cv(const cv::Mat& sample, float* input_data, int img_w, int img_h, const float* mean, const float* scale, int swapRB)
+void UltraFace::get_input_data_cv(const cv::Mat& sample, float* input_data, int img_w, int img_h, const float* mean, const float* scale)
 {
     cv::Mat img;
     if(sample.channels() == 4)
@@ -243,27 +242,22 @@ void UltraFace::get_input_data_cv(const cv::Mat& sample, float* input_data, int 
     {
         cv::cvtColor(sample, img, cv::COLOR_GRAY2BGR);
     }
-    else if(sample.channels() == 3 && swapRB == 1)
-    {
-        cv::cvtColor(sample, img, cv::COLOR_BGR2RGB);
-    }
     else
     {
         img = sample;
     }
 
     cv::resize(img, img, cv::Size(img_w, img_h));
-    img.convertTo(img, CV_32FC3);
-    float* img_data = ( float* )img.data;
     int hw = img_w * img_h;
+    int index = 0;
     for(int w = 0; w < img_w; w++)
     {
         for(int h = 0; h < img_h; h++)
         {
             for(int c = 0; c < 3; c++)
             {
-                input_data[c * hw + w * img_h + h] = (*img_data - mean[c]) * scale[c];
-                img_data++;
+                input_data[c * hw + w * img_h + h] = ((float)img.data[index] - mean[c]) * scale[c];
+                index++;
             }
         }
     }

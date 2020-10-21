@@ -38,7 +38,7 @@ private:
     void generateBBox(std::vector<FaceInfo> &bbox_collection, tensor_t scores, tensor_t boxes);
 
     void nms(std::vector<FaceInfo> &input, std::vector<FaceInfo> &output, int type = blending_nms);
-    void get_input_data_cv(const cv::Mat& sample, float* input_data, int img_w, int img_h, const float* mean, const float* scale, int swapRB);
+    void get_input_data_cv(const cv::Mat& sample, float* input_data, int img_w, int img_h, const float* mean, const float* scale);
 
 private:
 
